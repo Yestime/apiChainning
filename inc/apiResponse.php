@@ -28,9 +28,8 @@ class apiResponse {
 	}
 	
 	// courtesty http://stackoverflow.com/users/31671/alex
-	//@todo separate array keys and prevent from being casted to object
 	function assignArrayByPath(&$arr, $path, $value, $separator='.') {
-		$keys = explode($separator, $path);
+		$keys = $this->parsePath($path, $separator);
 
 		foreach ($keys as $key) {
 			$arr = &$arr[$key];
@@ -38,6 +37,49 @@ class apiResponse {
 
 		$arr = $value;
 	}
+
+    /**
+     * Parses string path. Considers array subscripts.
+     * @example "path.array[0]" => ["path", "array", "0"]
+     * @param string $path
+     * @param string $separator parts separator
+     * @return array
+     */
+	private function parsePath($path, $separator) {
+        $keys = explode($separator, $path);
+        $result = [];
+
+        foreach ($keys as $key) {
+            $nestedKeys = array_map(function ($part) {
+                return trim($part, ']');
+            }, explode('[', $key));
+
+            $result[] = $nestedKeys;
+        }
+
+        return $this->array_flatten($result);
+    }
+
+    /**
+     * Recursively flatten nested array
+     * @example [[1,2,3], [4,5]] => [1,2,3,4,5]
+     * @param array $arr
+     * @return array
+     */
+    private function array_flatten($arr) {
+        if (!is_array($arr)) {
+            return [];
+        }
+        $result = [];
+        foreach ($arr as $key => $val) {
+            if (is_array($val)) {
+                $result = array_merge($result, $this->array_flatten($val));
+            } else {
+                $result[$key] = $val;
+            }
+        }
+        return $result;
+    }
 
 	
 	function retrieveData($property) {
