@@ -45,7 +45,7 @@ class apiResponse {
      * @param string $separator parts separator
      * @return array
      */
-	private function parsePath($path, $separator) {
+    private function parsePath($path, $separator) {
         $keys = explode($separator, $path);
         $result = [];
 

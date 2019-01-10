@@ -70,20 +70,23 @@ JSON;
                 'status' => 200,
                 'headers' => array(),
                 'body' => json_decode(sprintf('{
-    "user": "%s",
-	"albums": [{
-		"album_type": "album",
-		"details": {
-			"name": "Cool Album",
-			"artist": "cool Artist"
-		}
-	}, {
-		"album_type": "album",
-		"details": {
-			"name": "Cool Album 2",
-			"artist": "cool Artist 2"
-		}
-	}]
+  "user": "%s",
+  "albums": [
+    {
+      "album_type": "album",
+      "details": {
+        "name": "Cool Album",
+        "artist": "cool Artist"
+      }
+    },
+    {
+      "album_type": "album",
+      "details": {
+        "name": "Cool Album 2",
+        "artist": "cool Artist 2"
+      }
+    }
+  ]
 }', $data->user)));
 
         } elseif ($resource == '/users') {
@@ -91,57 +94,38 @@ JSON;
                 'status' => 200,
                 'headers' => array(),
                 'body' => json_decode('{
-			"test" : "mike",
-	"albums": [{
-		"userName": "bob",
-		"details": {
-			"name": "Cool Album",
-			"artist": "cool Artist"
-		}
-	}, {
-		"userName": "joe",
-		"details": {
-			"name": "Cool Album 2",
-			"artist": "cool Artist 2"
-		}
-	}]
+  "test": "mike",
+  "albums": [
+    {
+      "userName": "bob",
+      "details": {
+        "name": "Cool Album",
+        "artist": "cool Artist"
+      }
+    },
+    {
+      "userName": "joe",
+      "details": {
+        "name": "Cool Album 2",
+        "artist": "cool Artist 2"
+      }
+    }
+  ]
 }'));
 
-        } elseif ($resource == '/addresses') {
-            return array(
-                'status' => 200,
-                'headers' => array(),
-                'body' => json_decode('{
-	"albums": [{
-		"album_type": "album",
-		"details": {
-			"name": "Cool Album",
-			"artist": "cool Artist"
-		}
-	}, {
-		"album_type": "album",
-		"details": {
-			"name": "Cool Album 2",
-			"artist": "cool Artist 2"
-		}
-	}]
-}'));
-
-        }
-
-        elseif ($resource == '/usermike') {
+        } elseif ($resource == '/usermike') {
 
             return array(
                 'status' => 200,
                 'headers' => array(),
                 'body' => json_decode('{
-	"user": {
-		"album_type": "album",
-		"name": {
-			"first": "Mike",
-			"last": "Stowe"
-		}
-	}
+  "user": {
+    "album_type": "album",
+    "name": {
+      "first": "Mike",
+      "last": "Stowe"
+    }
+  }
 }'));
         }
 
