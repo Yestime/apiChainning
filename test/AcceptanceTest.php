@@ -66,9 +66,9 @@ JSON;
     public function myCalls($resource, $method, $headers, $data) {
 
         if ($resource == '/albums') {
-            return array(
+            return [
                 'status' => 200,
-                'headers' => array(),
+                'headers' => [],
                 'body' => json_decode(sprintf('{
   "user": "%s",
   "albums": [
@@ -87,12 +87,12 @@ JSON;
       }
     }
   ]
-}', $data->user)));
+}', $data->user))];
 
         } elseif ($resource == '/users') {
-            return array(
+            return [
                 'status' => 200,
-                'headers' => array(),
+                'headers' => [],
                 'body' => json_decode('{
   "test": "mike",
   "albums": [
@@ -111,13 +111,13 @@ JSON;
       }
     }
   ]
-}'));
+}')];
 
         } elseif ($resource == '/usermike') {
 
-            return array(
+            return [
                 'status' => 200,
-                'headers' => array(),
+                'headers' => [],
                 'body' => json_decode('{
   "user": {
     "album_type": "album",
@@ -126,7 +126,7 @@ JSON;
       "last": "Stowe"
     }
   }
-}'));
+}')];
         }
 
         return [];
