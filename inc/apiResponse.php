@@ -19,24 +19,21 @@ class apiResponse {
 		if ($return != true || is_array($return)) {
 			$body = array();
 			foreach($return as $v) {
-				$tmpValue = $this->retrieveData('body.'.$v);
-				$this->assignArrayByPath($body, $v, $tmpValue);
+				$tmpValue = $this->retrieveData('body.' . $v);
+                $body = $this->assignArrayByPath($body, $v, $tmpValue);
 			}
 			//@todo iterate for casting once arrays are available (album[0], album[1], etc);
 			$this->response->body = json_decode(json_encode($body));
 		}
 	}
-	
-	// courtesty http://stackoverflow.com/users/31671/alex
-	function assignArrayByPath(&$arr, $path, $value, $separator='.') {
-		$keys = $this->parsePath($path, $separator);
 
-		foreach ($keys as $key) {
-			$arr = &$arr[$key];
-		}
+    private function assignArrayByPath($arr, $path, $value, $separator = '.') {
+        $keys = $this->parsePath($path, $separator);
 
-		$arr = $value;
-	}
+        return array_merge_recursive($arr, array_reduce(array_reverse($keys), function ($result, $key) {
+            return [$key => $result];
+        }, $value));
+    }
 
     /**
      * Parses string path. Considers array subscripts.
@@ -67,9 +64,6 @@ class apiResponse {
      * @return array
      */
     private function array_flatten($arr) {
-        if (!is_array($arr)) {
-            return [];
-        }
         $result = [];
         foreach ($arr as $key => $val) {
             if (is_array($val)) {
@@ -113,6 +107,5 @@ class apiResponse {
 		}
 
 		return $resp;
-
 	}
 }
