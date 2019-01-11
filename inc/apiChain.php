@@ -3,15 +3,16 @@
 namespace apiChain;
 
 class apiChain {
-    private $handler;
-    private $chain;
     public $parentData = false;
     public $callsRequested = 0;
     public $callsCompleted = 0;
-    private $headers = [];
     public $globals;
     public $responses = [];
     public $lastResponse;
+
+    private $handler;
+    private $chain;
+    private $headers = [];
 
     /**
      * apiChain constructor.
@@ -39,6 +40,20 @@ class apiChain {
         $this->run($handler);
     }
 
+    public function getCallPer() {
+        return $this->callsCompleted / $this->callsRequested;
+    }
+
+    public function getOutput() {
+        $this->responses = array_slice($this->responses, 1);
+        return json_encode($this);
+    }
+
+    public function getRawOutput() {
+        $this->responses = array_slice($this->responses, 1);
+        return $this;
+    }
+
     /**
      * @param $handler
      * @throws ApiChainError
@@ -64,74 +79,78 @@ class apiChain {
         $link->doOn = trim($link->doOn);
 
         $link->href = $this->replaceGlobals($link->href);
-
-        // Replace Placeholders
-        if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->href, $match)) {
-            $link->href = str_replace($match[0], $response->retrieveData(substr($match[0], 1)), $link->href);
-        }
+        $link->href = $this->replacePlaceholders($link->href, $response);
 
         if ($link->doOn != 'always' && !empty($link->doOn)) {
-            // Replace Placeholders
-            if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->doOn, $match)) {
-                $link->doOn = str_replace($match[0], '"' . $response->retrieveData(substr($match[0], 1)) . '"', $link->doOn);
-            }
+            $link->doOn = $this->replacePlaceholders($link->doOn, $response, true);
 
-            // Prevent PHP Code from being run by evil hackers
-            //@todo review code to ensure no workarounds/ hacks
-            if (preg_match('/[^a-z0-9\s\|&!\(\)\*\'"\\=]|([a-z\s]+\()|^[a-z\s_\-\(\)]+$/i', $link->doOn)) {
+            // TODO review code to ensure no workarounds/ hacks
+            if (!$this->isValidCondition($link->doOn)) {
                 return false;
             }
 
-            // Replace Logic Conditions
-            // @todo change to case insensitive
+            // TODO change to case insensitive
             $link->doOn = str_replace(
-                array('*', '|', 'regex'),
-                array('.+', ' || ', 'preg_match'),
+                ['*', '|', 'regex'],
+                ['.+', ' || ', 'preg_match'],
                 $link->doOn);
 
             // Identify Status Codes, Wildcards, and REGEX
-            // @todo add in regex to ignore numbers not by themselves, currently based on if in qoutes or wildcard
-            //$link->doOn = preg_replace('/[^\'"][0-9]{3}[^\'"]/', $response->status.' == $1', $link->doOn);
+            // TODO: add in regex to ignore numbers not by themselves, currently based on if in quotes or wildcard
             $link->doOn = preg_replace('/(([0-9]|(\.\+)){2,3})/', 'preg_match("/$1/", ' . $response->status . ')', $link->doOn);
 
-            // Evaluate Logical Statement
-            try {
-                eval('return ' . $link->doOn . ';');
-            } catch (\ParseError $e) {
+            if ( !$this->canEvaluate($link->doOn) ) {
                 return false;
             }
         }
 
-        // Replace Placeholders
         foreach ($link->data as $k => $v) {
-            if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $v, $match)) {
-                $link->data->$k = str_replace($match[0], $response->retrieveData(substr($match[0], 1)), $v);
-            }
-
-            // Globals
-            if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $v, $match)) {
-                $link->data->$k = str_replace($match[0], $this->globals[$match[2]], $link->data);
-            }
+            $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
         $data = $this->handler($link->href, $link->method, $link->data);
+        $newResponse = new apiResponse($link->href, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
-        $this->responses[] = $newResp = new apiResponse($link->href, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
-
-        if (isset($link->globals)) {
+        if ( isset($link->globals) ) {
             foreach ($link->globals as $k => $v) {
-                $this->globals[$k] = $newResp->retrieveData($v);
+                $this->globals[$k] = $newResponse->retrieveData($v);
             }
         }
 
+        $this->responses[] = $newResponse;
         $this->callsCompleted++;
 
         return true;
     }
 
+    private function canEvaluate($str) {
+        try {
+            eval('return ' . $str . ';');
+            return true;
+        } catch (\ParseError $e) {
+            return false;
+        }
+    }
+
+    private function isValidCondition($condition) {
+        return !preg_match('/[^a-z0-9\s\|&!\(\)\*\'"\\=]|([a-z\s]+\()|^[a-z\s_\-\(\)]+$/i', $condition);
+    }
+
     private function replaceGlobals($content) {
         if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $match)) {
             return str_replace($match[0], $this->globals[$match[1]], $content);
+        }
+
+        return $content;
+    }
+
+    private function replacePlaceholders($content, $response, $withQuotes = false) {
+        if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
+            if ($response instanceof apiResponse) {
+                $value = $response->retrieveData(substr($match[0], 1));
+
+                return str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
+            }
         }
 
         return $content;
@@ -147,19 +166,5 @@ class apiChain {
             'headers' => [],
             'body' => ''
         ];
-    }
-
-    public function getCallPer() {
-        return $this->callsCompleted / $this->callsRequested;
-    }
-
-    public function getOutput() {
-        array_shift($this->responses);
-        return json_encode($this);
-    }
-
-    public function getRawOutput() {
-        array_shift($this->responses);
-        return $this;
     }
 }

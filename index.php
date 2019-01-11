@@ -1,7 +1,6 @@
 <?php
-// Include Necessary Classes
-require_once('inc/apiChain.php');
-require_once('inc/apiResponse.php');
+
+include_once __DIR__ . '/autoload.php';
 
 
 // Setup Routing Handler for Requests
