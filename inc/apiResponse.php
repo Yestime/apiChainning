@@ -1,31 +1,32 @@
 <?php
+
 namespace apiChain;
 
 class apiResponse {
 
-	public $href;
-	public $method;
-	public $status;
-	public $response;
-	
-	
-	function __construct($resource, $method, $status, $headers, $body, $return) {
-		$this->href = $resource;
-		$this->method = $method;
-		$this->status = $status;
-		$this->response = new \stdClass;
-		$this->response->headers = $headers;
-		$this->response->body = $body;
-		if ($return != true || is_array($return)) {
-			$body = array();
-			foreach($return as $v) {
-				$tmpValue = $this->retrieveData('body.' . $v);
+    public $href;
+    public $method;
+    public $status;
+    public $response;
+
+
+    function __construct($resource, $method, $status, $headers, $body, $return) {
+        $this->href = $resource;
+        $this->method = $method;
+        $this->status = $status;
+        $this->response = new \stdClass;
+        $this->response->headers = $headers;
+        $this->response->body = $body;
+        if ($return != true || is_array($return)) {
+            $body = array();
+            foreach ($return as $v) {
+                $tmpValue = $this->retrieveData('body.' . $v);
                 $body = $this->assignArrayByPath($body, $v, $tmpValue);
-			}
-			//@todo iterate for casting once arrays are available (album[0], album[1], etc);
-			$this->response->body = json_decode(json_encode($body));
-		}
-	}
+            }
+            //@todo iterate for casting once arrays are available (album[0], album[1], etc);
+            $this->response->body = json_decode(json_encode($body));
+        }
+    }
 
     private function assignArrayByPath($arr, $path, $value, $separator = '.') {
         $keys = $this->parsePath($path, $separator);
@@ -75,37 +76,37 @@ class apiResponse {
         return $result;
     }
 
-	
-	function retrieveData($property) {
-        $property = str_replace(array('{','}'), '', $property);
-		$parts = explode('.', $property);
-		$resp = $this->response;
 
-		foreach ($parts as $part) {
-			$match = array();
-			if (preg_match('/\[(\'|")?[a-z0-9_\s](\'|")?\]+/i', $part, $match)) {
-				$part = str_replace($match, '', $part);
-			}
-			
+    function retrieveData($property) {
+        $property = str_replace(array('{', '}'), '', $property);
+        $parts = explode('.', $property);
+        $resp = $this->response;
+
+        foreach ($parts as $part) {
+            $match = array();
+            if (preg_match('/\[(\'|")?[a-z0-9_\s](\'|")?\]+/i', $part, $match)) {
+                $part = str_replace($match, '', $part);
+            }
+
             if (!isset($resp->$part)) {
                 return null;
             }
-			$resp = $resp->$part;
+            $resp = $resp->$part;
 
-			if ($match) {
-				foreach ($match as $m) {
-					$m = preg_replace('/[\[\'"\]]/', '', $m);
-					if (isset($resp)) {
-						foreach ($resp as $k => $v) {
-							if ($k == $m) {
-								$resp = $v;
-							}
-						}
-					}
-				}
-			}
-		}
+            if ($match) {
+                foreach ($match as $m) {
+                    $m = preg_replace('/[\[\'"\]]/', '', $m);
+                    if (isset($resp)) {
+                        foreach ($resp as $k => $v) {
+                            if ($k == $m) {
+                                $resp = $v;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		return $resp;
-	}
+        return $resp;
+    }
 }
