@@ -2,20 +2,28 @@
 
 namespace apiChain;
 
-class ApiChainError extends \Exception {}
-
 class apiChain {
-    private $handler;
-    private $chain;
     public $parentData = false;
     public $callsRequested = 0;
     public $callsCompleted = 0;
-    private $headers = array();
     public $globals;
-    public $responses = array();
+    public $responses = [];
     public $lastResponse;
 
-    function __construct($chain, $handler = false, $lastResponse = false, $globals = array(), $parentData = false) {
+    private $handler;
+    private $chain;
+    private $headers = [];
+
+    /**
+     * apiChain constructor.
+     * @param $chain
+     * @param bool $handler
+     * @param bool $lastResponse
+     * @param array $globals
+     * @param bool $parentData
+     * @throws ApiChainError
+     */
+    function __construct($chain, $handler = false, $lastResponse = false, $globals = [], $parentData = false) {
         $this->chain = json_decode($chain);
 
         if (json_last_error()) {
@@ -24,34 +32,44 @@ class apiChain {
 
         $this->parentData = $parentData;
         $this->handler = $handler;
-        // getallheaders() exists only in Apache environment
         $this->headers = function_exists('getallheaders') ? getallheaders() : [];
         $this->responses[] = $lastResponse;
         $this->globals = $globals;
-
         $this->callsRequested = count($this->chain);
 
+        $this->run($handler);
+    }
+
+    public function getCallPer() {
+        return $this->callsCompleted / $this->callsRequested;
+    }
+
+    public function getOutput() {
+        $this->responses = array_slice($this->responses, 1);
+        return json_encode($this);
+    }
+
+    public function getRawOutput() {
+        $this->responses = array_slice($this->responses, 1);
+        return $this;
+    }
+
+    /**
+     * @param $handler
+     * @throws ApiChainError
+     */
+    public function run($handler) {
         foreach ($this->chain as $link) {
             if (is_array($link)) {
-                // Handle Nested Chains
-                //@todo test functionality
                 $this->callsRequested--;
 
-                if (!$this->parentData) {
-                    $lastResponse = array_pop($this->responses);
-                    $this->parentData = $lastResponse;
-                    $this->responses[] = $lastResponse;
-                } else {
-                    $lastResponse = $this->parentData;
-                }
+                $this->lastResponse = $this->parentData ? $this->parentData : ArrayUtils::last($this->responses);
+                $this->parentData = $this->parentData ?: $this->lastResponse;
 
-                $this->lastResponse = $lastResponse;
-                $newChain = new apiChain(json_encode($link), $handler, $lastResponse, $this->globals);
-                $this->responses[] = array($newChain->getRawOutput());
-
-            } elseif (!$this->validateLink($link)) {
-                // End Chain and Return
-                return $this;
+                $newChain = new apiChain(json_encode($link), $handler, $this->lastResponse, $this->globals);
+                $this->responses[] = [$newChain->getRawOutput()];
+            } elseif ( !$this->validateLink($link) ) {
+                return;
             }
         }
     }
@@ -60,77 +78,86 @@ class apiChain {
         $response = end($this->responses);
         $link->doOn = trim($link->doOn);
 
-        // Replace Globals
-        if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $link->href, $match)) {
-            $link->href = str_replace($match[0], $this->globals[$match[1]], $link->href);
-        }
-
-        // Replace Placeholders
-        if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->href, $match)) {
-            $link->href = str_replace($match[0], $response->retrieveData(substr($match[0], 1)), $link->href);
-        }
+        $link->href = $this->replaceGlobals($link->href);
+        $link->href = $this->replacePlaceholders($link->href, $response);
 
         if ($link->doOn != 'always' && !empty($link->doOn)) {
-            // Replace Placeholders
-            if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->doOn, $match)) {
-                $link->doOn = str_replace($match[0], '"' . $response->retrieveData(substr($match[0], 1)) . '"', $link->doOn);
-            }
+            $link->doOn = $this->replacePlaceholders($link->doOn, $response, true);
 
-            // Prevent PHP Code from being run by evil hackers
-            //@todo review code to ensure no workarounds/ hacks
-            if (preg_match('/[^a-z0-9\s\|&!\(\)\*\'"\\=]|([a-z\s]+\()|^[a-z\s_\-\(\)]+$/i', $link->doOn)) {
+            // TODO review code to ensure no workarounds/ hacks
+            if (!$this->isValidCondition($link->doOn)) {
                 return false;
             }
 
-            // Replace Logic Conditions
-            // @todo change to case insensitive
+            // TODO change to case insensitive
             $link->doOn = str_replace(
-                array('*', '|', 'regex'),
-                array('.+', ' || ', 'preg_match'),
+                ['*', '|', 'regex'],
+                ['.+', ' || ', 'preg_match'],
                 $link->doOn);
 
             // Identify Status Codes, Wildcards, and REGEX
-            // @todo add in regex to ignore numbers not by themselves, currently based on if in qoutes or wildcard
-            //$link->doOn = preg_replace('/[^\'"][0-9]{3}[^\'"]/', $response->status.' == $1', $link->doOn);
+            // TODO: add in regex to ignore numbers not by themselves, currently based on if in quotes or wildcard
             $link->doOn = preg_replace('/(([0-9]|(\.\+)){2,3})/', 'preg_match("/$1/", ' . $response->status . ')', $link->doOn);
 
-            // Evaluate Logical Statement
-            try {
-                eval('return ' . $link->doOn . ';');
-            } catch (\ParseError $e) {
+            if ( !$this->canEvaluate($link->doOn) ) {
                 return false;
             }
         }
 
-        // Replace Placeholders
         foreach ($link->data as $k => $v) {
-            if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $v, $match)) {
-                $link->data->$k = str_replace($match[0], $response->retrieveData(substr($match[0], 1)), $v);
-            }
-
-            // Globals
-            if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $v, $match)) {
-                $link->data->$k = str_replace($match[0], $this->globals[$match[2]], $link->data);
-            }
+            $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
         $data = $this->handler($link->href, $link->method, $link->data);
+        $newResponse = new apiResponse($link->href, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
-        $this->responses[] = $newResp = new apiResponse($link->href, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
-
-        if (isset($link->globals)) {
+        if ( isset($link->globals) ) {
             foreach ($link->globals as $k => $v) {
-                $this->globals[$k] = $newResp->retrieveData($v);
+                $this->globals[$k] = $newResponse->retrieveData($v);
             }
         }
 
+        $this->responses[] = $newResponse;
         $this->callsCompleted++;
 
         return true;
     }
 
+    private function canEvaluate($str) {
+        try {
+            eval('return ' . $str . ';');
+            return true;
+        } catch (\ParseError $e) {
+            return false;
+        }
+    }
+
+    private function isValidCondition($condition) {
+        return !preg_match('/[^a-z0-9\s\|&!\(\)\*\'"\\=]|([a-z\s]+\()|^[a-z\s_\-\(\)]+$/i', $condition);
+    }
+
+    private function replaceGlobals($content) {
+        if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $match)) {
+            return str_replace($match[0], $this->globals[$match[1]], $content);
+        }
+
+        return $content;
+    }
+
+    private function replacePlaceholders($content, $response, $withQuotes = false) {
+        if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
+            if ($response instanceof apiResponse) {
+                $value = $response->retrieveData(substr($match[0], 1));
+
+                return str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
+            }
+        }
+
+        return $content;
+    }
+
     private function handler($resource, $method, $body) {
-        if (is_callable($this->handler)) {
+        if ( is_callable($this->handler) ) {
             return call_user_func($this->handler, $resource, $method, $this->headers, $body);
         }
 
@@ -139,19 +166,5 @@ class apiChain {
             'headers' => [],
             'body' => ''
         ];
-    }
-
-    public function getCallPer() {
-        return $this->callsCompleted / $this->callsRequested;
-    }
-
-    public function getOutput() {
-        array_shift($this->responses);
-        return json_encode($this);
-    }
-
-    public function getRawOutput() {
-        array_shift($this->responses);
-        return $this;
     }
 }
