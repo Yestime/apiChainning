@@ -47,7 +47,7 @@ JSON;
         $this->assertEquals('/users', $usersResponse->href);
         $this->assertEquals('get', $usersResponse->method);
 
-        $body = $usersResponse->response->body;
+        $body = $usersResponse->response->getBody();
         $this->assertEquals('mike', $body->test);
         $this->assertEquals('bob', $body->albums[0]->userName);
         $this->assertEquals('joe', $body->albums[1]->userName);
@@ -57,7 +57,7 @@ JSON;
         $albumsResponse = $chain->responses[2];
         $this->assertEquals('/albums', $albumsResponse->href);
         $this->assertEquals('get', $albumsResponse->method);
-        $this->assertEquals('bob', $albumsResponse->response->body->user);
+        $this->assertEquals('bob', $albumsResponse->response->getBody()->user);
     }
 
     public function myCalls($resource, $method, $headers, $data) {
