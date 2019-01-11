@@ -49,6 +49,19 @@ class ResponseTest extends TestCase {
             [['path' => ['arr' => ['val1', 'val2']]], ['path.arr[1]'], function ($body) {
                 $this->assertEquals('val2', $body->path->arr[1]);
             }],
+
+            [[
+                'test' => 'val',
+                'arr' =>
+                    [
+                        ['nested' => 'val1'],
+                        ['nested' => 'val2']
+                    ]
+            ], ['test', 'arr[0].nested', 'arr[1].nested'], function ($body) {
+                $this->assertEquals('val', $body->test);
+                $this->assertEquals('val1', $body->arr[0]->nested);
+                $this->assertEquals('val2', $body->arr[1]->nested);
+            }],
         ];
 
         array_walk($tests, function ($item) {
@@ -60,12 +73,6 @@ class ResponseTest extends TestCase {
     }
 
     private function arrayToObject(array $arr) {
-        $obj = new stdClass();
-
-        array_walk($arr, function ($val, $key) use ($obj) {
-            $obj->$key = (is_array($val) ? $this->arrayToObject($val) : $val);
-        });
-
-        return $obj;
+        return json_decode(json_encode($arr));
     }
 }

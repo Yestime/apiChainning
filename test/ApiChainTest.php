@@ -30,10 +30,24 @@ class ApiChainTest extends TestCase {
             $this->assertEquals('/path//${global.nonexistent}', $resource);
         };
 
-        new \apiChain\apiChain($config, $handler, $this->emptyResponse(), [
+        new \apiChain\apiChain($config, $handler, $this->createResponse(), [
             'main' => 'path',
             'sub' => 'test'
         ]);
+    }
+
+    public function testReplacePlaceholdersInData() {
+        $config = json_encode([
+            $this->createRule(['data' => ['key' => '$body.key']])
+        ]);
+
+        $handler = function ($_1, $_2, $_3, $body) {
+            $this->assertEquals('val', $body->key);
+        };
+
+        $body = new stdClass();
+        $body->key = 'val';
+        new \apiChain\apiChain($config, $handler, $this->createResponse($body));
     }
 
     public function testChainWithoutHandler() {
@@ -55,6 +69,13 @@ class ApiChainTest extends TestCase {
         $this->assertEquals(2, $chain->callsRequested);
         $this->assertEquals(1, $chain->callsCompleted);
         $this->assertEquals(0.5, $chain->getCallPer());
+
+
+        $config = json_encode([
+            $this->createRule(['doOn' => '"mike" == \'mike\'']),
+        ]);
+        $chain = new \apiChain\apiChain($config, false, $this->createResponse());
+        $this->assertEquals(1, $chain->callsCompleted);
     }
 
     public function testEvalFailsByParseError() {
@@ -62,13 +83,13 @@ class ApiChainTest extends TestCase {
             $this->createRule(['doOn' => '23\'2']),
         ]);
 
-        $chain = new \apiChain\apiChain($config, false, $this->emptyResponse());
+        $chain = new \apiChain\apiChain($config, false, $this->createResponse());
         $this->assertEquals(1, $chain->callsRequested);
         $this->assertEquals(0, $chain->callsCompleted);
     }
 
     public function testDefaultOutput() {
-        $chain = new \apiChain\apiChain(json_encode([]), false, $this->emptyResponse());
+        $chain = new \apiChain\apiChain(json_encode([]), false, $this->createResponse());
         $this->assertEquals([
             'parentData' => false,
             'callsRequested' => 0,
@@ -89,7 +110,8 @@ class ApiChainTest extends TestCase {
         ], $partial);
     }
 
-    private function emptyResponse() {
-        return new \apiChain\apiResponse([], '', 0, [], new stdClass(), []);
+    private function createResponse($body = null) {
+        $body = ($body === null ? new stdClass() : $body);
+        return new \apiChain\apiResponse([], '', 0, [], $body, true);
     }
 }
