@@ -17,6 +17,10 @@ class apiResponse {
         $this->response->setHeaders($headers);
         $this->response->setBody($body);
 
+        $this->processBody($return);
+    }
+
+    public function processBody($return) {
         if ($return !== true || is_array($return)) {
             $body = [];
 
@@ -30,9 +34,9 @@ class apiResponse {
     }
 
     private function normalizeBody($body) {
-        Utils::walkArrayValues($body, function (&$val) {
-            if ( is_array($val) && Utils::allNumericKeys($val) && !Utils::isSeqArray($val) ) {
-                $val = Utils::fillMissingKeys($val, null);
+        ArrayUtils::walkValues($body, function (&$val) {
+            if ( is_array($val) && ArrayUtils::allNumericKeys($val) && !ArrayUtils::isSequential($val) ) {
+                $val = ArrayUtils::fillMissingNumericKeys($val, null);
                 ksort($val);
             }
         });

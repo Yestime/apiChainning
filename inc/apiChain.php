@@ -2,20 +2,27 @@
 
 namespace apiChain;
 
-class ApiChainError extends \Exception {}
-
 class apiChain {
     private $handler;
     private $chain;
     public $parentData = false;
     public $callsRequested = 0;
     public $callsCompleted = 0;
-    private $headers = array();
+    private $headers = [];
     public $globals;
-    public $responses = array();
+    public $responses = [];
     public $lastResponse;
 
-    function __construct($chain, $handler = false, $lastResponse = false, $globals = array(), $parentData = false) {
+    /**
+     * apiChain constructor.
+     * @param $chain
+     * @param bool $handler
+     * @param bool $lastResponse
+     * @param array $globals
+     * @param bool $parentData
+     * @throws ApiChainError
+     */
+    function __construct($chain, $handler = false, $lastResponse = false, $globals = [], $parentData = false) {
         $this->chain = json_decode($chain);
 
         if (json_last_error()) {
@@ -24,34 +31,30 @@ class apiChain {
 
         $this->parentData = $parentData;
         $this->handler = $handler;
-        // getallheaders() exists only in Apache environment
         $this->headers = function_exists('getallheaders') ? getallheaders() : [];
         $this->responses[] = $lastResponse;
         $this->globals = $globals;
-
         $this->callsRequested = count($this->chain);
 
+        $this->run($handler);
+    }
+
+    /**
+     * @param $handler
+     * @throws ApiChainError
+     */
+    public function run($handler) {
         foreach ($this->chain as $link) {
             if (is_array($link)) {
-                // Handle Nested Chains
-                //@todo test functionality
                 $this->callsRequested--;
 
-                if (!$this->parentData) {
-                    $lastResponse = array_pop($this->responses);
-                    $this->parentData = $lastResponse;
-                    $this->responses[] = $lastResponse;
-                } else {
-                    $lastResponse = $this->parentData;
-                }
+                $this->lastResponse = $this->parentData ? $this->parentData : ArrayUtils::last($this->responses);
+                $this->parentData = $this->parentData ?: $this->lastResponse;
 
-                $this->lastResponse = $lastResponse;
-                $newChain = new apiChain(json_encode($link), $handler, $lastResponse, $this->globals);
-                $this->responses[] = array($newChain->getRawOutput());
-
-            } elseif (!$this->validateLink($link)) {
-                // End Chain and Return
-                return $this;
+                $newChain = new apiChain(json_encode($link), $handler, $this->lastResponse, $this->globals);
+                $this->responses[] = [$newChain->getRawOutput()];
+            } elseif ( !$this->validateLink($link) ) {
+                return;
             }
         }
     }
@@ -60,10 +63,7 @@ class apiChain {
         $response = end($this->responses);
         $link->doOn = trim($link->doOn);
 
-        // Replace Globals
-        if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $link->href, $match)) {
-            $link->href = str_replace($match[0], $this->globals[$match[1]], $link->href);
-        }
+        $link->href = $this->replaceGlobals($link->href);
 
         // Replace Placeholders
         if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->href, $match)) {
@@ -129,8 +129,16 @@ class apiChain {
         return true;
     }
 
+    private function replaceGlobals($content) {
+        if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $match)) {
+            return str_replace($match[0], $this->globals[$match[1]], $content);
+        }
+
+        return $content;
+    }
+
     private function handler($resource, $method, $body) {
-        if (is_callable($this->handler)) {
+        if ( is_callable($this->handler) ) {
             return call_user_func($this->handler, $resource, $method, $this->headers, $body);
         }
 

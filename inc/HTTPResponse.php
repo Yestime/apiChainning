@@ -23,7 +23,7 @@ class HTTPResponse {
     }
 
     public function assignValueByPath($arr, $path, $value, $separator = '.') {
-        return Utils::setValueByPath($arr, $this->parsePath($path, $separator), $value);
+        return ArrayUtils::setValueByPath($arr, $this->parsePath($path, $separator), $value);
     }
 
     public function getValue($path, $pathSeparator = '.') {
@@ -63,6 +63,6 @@ class HTTPResponse {
             $result[] = $nestedKeys;
         }
 
-        return Utils::arrayFlatten($result);
+        return ArrayUtils::flatten($result);
     }
 }
