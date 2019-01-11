@@ -2,9 +2,6 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once('inc/apiChain.php');
-require_once('inc/apiResponse.php');
-
 /**
  * Tests basic case from index.php
  * Class AcceptanceTest
