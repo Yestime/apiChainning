@@ -2,6 +2,7 @@
 
 $classMap = [
     'apiChain\apiChain' => __DIR__ . '/inc/apiChain.php',
+    'apiChain\ApiChainError' => __DIR__ . '/inc/apiChain.php',
     'apiChain\apiResponse' => __DIR__ . '/inc/apiResponse.php',
 ];
 

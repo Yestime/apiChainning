@@ -6,46 +6,48 @@ class ApiChainError extends \Exception {}
 class apiChain {
 	private $handler;
 	private $chain;
-	private $parentData = false;
+	public $parentData = false;
 	public $callsRequested = 0;
 	public $callsCompleted = 0;
 	private $headers = array();
-	private $globals;
+	public $globals;
 	public $responses = array();
+	public $lastResponse;
 	
-	function __construct($chain, $handler = false, $lastResponse = false, $globals = array()) {
+	function __construct($chain, $handler = false, $lastResponse = false, $globals = array(), $parentData = false) {
 		$this->chain = json_decode($chain);
 
         if ( json_last_error() ) {
             throw new ApiChainError( 'Error while parsing chain config: ' . json_last_error_msg() );
         }
 
+        $this->parentData = $parentData;
 		$this->handler = $handler;
 		// getallheaders() exists only in Apache environment
 		$this->headers = function_exists('getallheaders') ? getallheaders() : [];
 		$this->responses[] = $lastResponse;
 		$this->globals = $globals;
-		
+
 		$this->callsRequested = count($this->chain);
-		
+
 		foreach($this->chain as $link) {
 			if (is_array($link)) {
 				// Handle Nested Chains
 				//@todo test functionality
 				$this->callsRequested--;
-				
+
 				if (!$this->parentData) {
 					$lastResponse = array_pop($this->responses);
 					$this->parentData = $lastResponse;
 					$this->responses[] = $lastResponse;
-					
 				} else {
 					$lastResponse = $this->parentData;
 				}
-				
+
+				$this->lastResponse = $lastResponse;
 				$newChain = new apiChain(json_encode($link), $handler, $lastResponse, $this->globals);
 				$this->responses[] = array($newChain->getRawOutput());
-				
+
 			} elseif (!$this->validateLink($link)) {
 				// End Chain and Return
 				return $this;
@@ -64,8 +66,8 @@ class apiChain {
 		
         // Replace Placeholders
         if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $link->href, $match)) {
-				$link->href = str_replace($match[0], $response->retrieveData(substr($match[0],1)), $link->href);
-			}
+            $link->href = str_replace($match[0], $response->retrieveData(substr($match[0],1)), $link->href);
+        }
 		
 		if ($link->doOn != 'always' && !empty($link->doOn)) {
 			// Replace Placeholders
@@ -92,9 +94,11 @@ class apiChain {
 			$link->doOn = preg_replace('/(([0-9]|(\.\+)){2,3})/', 'preg_match("/$1/", '.$response->status.')', $link->doOn);
 			
 			// Evaluate Logical Statement
-			if (!eval('return ' . $link->doOn .';')) {
-				return false;
-			}
+            try {
+                eval('return ' . $link->doOn .';');
+            } catch (\ParseError $e) {
+                return false;
+            }
 		}
 		
 		// Replace Placeholders
@@ -125,27 +129,15 @@ class apiChain {
 	}
 	
 	private function handler($resource, $method, $body) {
-		if ($this->handler) {
+		if ( is_callable($this->handler) ) {
 			return call_user_func($this->handler, $resource, $method, $this->headers, $body);
 		}
-		
-		//@todo port over API engin
-		//@todo add in protocol/host/path
-		$api = new apiChain\apiEngine($INSERT_HOST_PATH_HERE);
-		$api->setHeaders($this->headers);
-		if (strtolower($method) == 'get') {
-			//@todo parse body into query string
-		} else {
-			$api->setBody($body);
-		}
-		
-		$api->$method($resource);
-		
-		return array(
-			'status' => $api->getResponseStatus(),
-			'body'   => $api->getResponseBody(),
-			'headers' => $api->getResponseHeaders() // NEED TO ADD IN TO API AGENT :(
-		);
+
+		return [
+		    'status' => 0,
+            'headers' => [],
+            'body' => ''
+        ];
 	}
 	
 	public function getCallPer() {
