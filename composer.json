@@ -12,6 +12,8 @@
         }
     ],
 
+    "type": "library",
+
     "minimum-stability": "dev",
 
     "require-dev": {
