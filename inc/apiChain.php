@@ -99,7 +99,7 @@ class apiChain {
             // TODO: add in regex to ignore numbers not by themselves, currently based on if in quotes or wildcard
             $link->doOn = preg_replace('/(([0-9]|(\.\+)){2,3})/', 'preg_match("/$1/", ' . $response->status . ')', $link->doOn);
 
-            if ( !$this->canEvaluate($link->doOn) ) {
+            if ( !$this->evaluate($link->doOn) ) {
                 return false;
             }
         }
@@ -123,10 +123,10 @@ class apiChain {
         return true;
     }
 
-    private function canEvaluate($str) {
+    private function evaluate($str) {
         try {
-            eval('return ' . $str . ';');
-            return true;
+            $result = eval('return ' . $str . ';');
+            return $result;
         } catch (\ParseError $e) {
             return false;
         }

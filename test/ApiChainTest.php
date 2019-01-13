@@ -100,6 +100,37 @@ class ApiChainTest extends TestCase {
         ], json_decode($chain->getOutput(), true));
     }
 
+    public function testConditionForEmptyResponse() {
+        $config = json_encode([
+            $this->createRule([
+                'doOn' => '$body == ""',
+                'url' => '/test'
+            ]),
+        ]);
+
+        $handler = function ($resource) {
+            $this->assertEquals('/test', $resource);
+        };
+
+        $chain = new \apiChain\apiChain($config, $handler, $this->createResponse(''));
+        $this->assertEquals(1, $chain->callsCompleted);
+
+
+        $config = json_encode([
+            $this->createRule([
+                'doOn' => '$body != ""',
+                'url' => '/test'
+            ]),
+        ]);
+
+        $handler = function ($resource) {
+            $this->fail( sprintf("Resource %s requested", $resource) );
+        };
+
+        $chain = new \apiChain\apiChain($config, $handler, $this->createResponse(''));
+        $this->assertEquals(0, $chain->callsCompleted);
+    }
+
     private function createRule(array $partial) {
         return array_merge([
             'doOn' => 'always',
