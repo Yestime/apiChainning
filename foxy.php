@@ -262,21 +262,21 @@ function myCalls($resource, $headers, $body) {
 $chain = '[
   {
     "doOn": "always",
-    "href": "/users/1",
+    "url": "/users/1",
     "method": "get",
     "data": {},
     "return": ["_links.fx:default_store.href"]
   },
   {
     "doOn": "200",
-    "href": "${body._links.fx:default_store.href}",
+    "url": "${body._links.fx:default_store.href}",
     "method": "get",
     "data": {},
     "return": ["_links.fx:carts.href"]
   },
   {
     "doOn": "2*",
-    "href": "$body._links.fx:carts.href",
+    "url": "$body._links.fx:carts.href",
     "method": "get",
     "data": {},
     "return": ["total_items"]

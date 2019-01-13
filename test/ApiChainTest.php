@@ -23,7 +23,7 @@ class ApiChainTest extends TestCase {
 
     public function testReplaceGlobalsInLink() {
         $config = json_encode([
-            $this->createRule(['href' => '/$global.main/${global.sub}/${global.nonexistent}'])
+            $this->createRule(['url' => '/$global.main/${global.sub}/${global.nonexistent}'])
         ]);
 
         $handler = function ($resource) {
@@ -103,7 +103,7 @@ class ApiChainTest extends TestCase {
     private function createRule(array $partial) {
         return array_merge([
             'doOn' => 'always',
-            'href' => '/',
+            'url' => '/',
             'method' => 'get',
             'data' => [],
             'return' => true,

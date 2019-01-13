@@ -109,21 +109,21 @@ function myCalls($resource, $headers, $body) {
 $chain = '[
   {
     "doOn": "always",
-    "href": "/users",
+    "url": "/users",
     "method": "get",
     "data": {},
     "return": ["test", "albums[0].userName", "albums[1].userName"]
   },
   {
     "doOn": "$body.test == \'mike\'",
-    "href": "/albums",
+    "url": "/albums",
     "method": "get",
     "data": {"user" : "$body.albums[0].userName"},
     "return": true
   },
   {
     "doOn": "2*",
-    "href": "/usermike",
+    "url": "/usermike",
     "method": "get",
     "data": {},
     "return": ["user.name"]
