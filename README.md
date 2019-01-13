@@ -20,7 +20,7 @@ Each chain is made of 5 components, all required:
 Component | Description | Example 
 ---------- | ----------- | ---------
 doOn | DoOn provides the condition on which the call should be performed.  Options include "always", a logical if statement `($body.user.firstName == 'Jim')` or an HTTP status code (with * being a wildcard). | 4**
-href | The complete path (including querystring) for the call being performed | /users/?lastName=Smith
+url | The complete path (including querystring) for the call being performed | /users/?lastName=Smith
 method | The HTTP method you wish to use to perform the call (such as GET, POST, etc) | get
 data | A string or JSON Object of the data you wish to send via the call (typically with POST, PUT, PATCH, DELETE) | { "firstName" : "Jim", "lastName" : "Smith" }
 return | The data (as an array) you wish to have returned.  If you wish for all data to be returned, use boolean "true" or if you wish for no data to be returned, use boolean "false." | ["firstName", "email", "_links"]
@@ -31,7 +31,7 @@ A simple request where you want to retrieve a user's messages, but first need to
 [
   {
     "doOn": "always",
-    "href": "/users/5",
+    "url": "/users/5",
     "method": "get",
     "data": {},
     "return": [
@@ -40,7 +40,7 @@ A simple request where you want to retrieve a user's messages, but first need to
   },
   {
     "doOn": 200,
-    "href" : "$body._links.messages",
+    "url" : "$body._links.messages",
     "method": "get",
     "data": {
         "emailAddress": "$body.email"
@@ -63,7 +63,7 @@ You can also layer multiple conditional calls by placing them in arrays, creatin
 [
   {
     "doOn": "always",
-    "href": "/users/5",
+    "url": "/users/5",
     "method": "get",
     "data": {},
     "return": [
@@ -73,7 +73,7 @@ You can also layer multiple conditional calls by placing them in arrays, creatin
   [
     {
       "doOn": 200,
-      "href" : "$body._links.messages",
+      "url" : "$body._links.messages",
       "method": "get",
       "data": {
           "emailAddress": "$body.email"
@@ -82,7 +82,7 @@ You can also layer multiple conditional calls by placing them in arrays, creatin
     },
     {
       "doOn": "4*|5*",
-      "href" : "/users",
+      "url" : "/users",
       "method": "post",
       "data": {
         "firstName": "Jim",
@@ -94,7 +94,7 @@ You can also layer multiple conditional calls by placing them in arrays, creatin
     [
       {
         "doOn": "201",
-        "href": "$headers.link",
+        "url": "$headers.link",
         "method": "get",
         "data": {},
         "return": [
@@ -103,7 +103,7 @@ You can also layer multiple conditional calls by placing them in arrays, creatin
       },
       {
         "doOn": 200,
-        "href" : "$body._links.sendMessage",
+        "url" : "$body._links.sendMessage",
         "method": "post",
         "data": {
           "to": "$body.email",
@@ -146,7 +146,7 @@ regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
 [
   {
     "doOn": "always",
-    "href": "/users/5",
+    "url": "/users/5",
     "method": "get",
     "data": {},
     "return": [
@@ -155,7 +155,7 @@ regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
   },
   {
     "doOn": "($body.firstName == "Jim" && $body.lastName == "Smith") || regex('/Jim/i', $body.email)",
-    "href" : "$body._links.messages",
+    "url" : "$body._links.messages",
     "method": "get",
     "data": {
         "emailAddress": "$body.email"
@@ -179,7 +179,7 @@ Within the responses array, each call object needs to include:
 
 Property | Definition | Example
 -------- | ---------- | -------
-href | the full path of the call that was attempted | /users?firstName=Jim
+url | the full path of the call that was attempted | /users?firstName=Jim
 method | the method that was used to make the call | get
 status | the HTTP status code the call returned | 200
 response | a response object containing the headers (as an object) and the body (as an object or string depending on content-type) | "headers" : { "content-type" : "application/json" }, "body" : { "user" : { "firstName" : "Jim" } }
@@ -191,7 +191,7 @@ response | a response object containing the headers (as an object) and the body 
   "callsCompleted" : 2,
   "responses" : [
     {
-      "href" : "/users/5",
+      "url" : "/users/5",
       "method" : "get",
       "status" : 200,
       "response" : {
@@ -204,7 +204,7 @@ response | a response object containing the headers (as an object) and the body 
     },
 
     {
-      "href" : "/messages/?userId=5",
+      "url" : "/messages/?userId=5",
       "method" : "get",
       "status" : 200,
       "response" : {

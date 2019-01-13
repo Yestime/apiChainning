@@ -78,8 +78,8 @@ class apiChain {
         $response = end($this->responses);
         $link->doOn = trim($link->doOn);
 
-        $link->href = $this->replaceGlobals($link->href);
-        $link->href = $this->replacePlaceholders($link->href, $response);
+        $link->url = $this->replaceGlobals($link->url);
+        $link->url = $this->replacePlaceholders($link->url, $response);
 
         if ($link->doOn != 'always' && !empty($link->doOn)) {
             $link->doOn = $this->replacePlaceholders($link->doOn, $response, true);
@@ -108,8 +108,8 @@ class apiChain {
             $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
-        $data = $this->handler($link->href, $link->method, $link->data);
-        $newResponse = new apiResponse($link->href, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
+        $data = $this->handler($link->url, $link->method, $link->data);
+        $newResponse = new apiResponse($link->url, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
         if ( isset($link->globals) ) {
             foreach ($link->globals as $k => $v) {
