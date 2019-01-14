@@ -22,10 +22,6 @@ class RequestChain {
         $this->rules[] = array_merge($this->defaultRule, $value);
     }
 
-    public function addGlobal($name, $value) {
-        $this->globals[$name] = $value;
-    }
-
     public function setHandler(callable $callback) {
         $this->handler = $callback;
     }

@@ -33,7 +33,7 @@ class RequestChainTest extends TestCase {
             rmdir($dir);
         };
 
-        if (is_dir(self::RESOURCE_DIR)) {
+        if ( is_dir(self::RESOURCE_DIR) ) {
             $removeDir(self::RESOURCE_DIR);
         }
     }
@@ -70,7 +70,7 @@ class RequestChainTest extends TestCase {
         $content1 = file_get_contents(self::RESOURCE_DIR . '/1');
         $this->assertEquals(['alias1' => 'val1', 'alias2' => 'val2'], json_decode($content1, true));
 
-        $content1 = file_get_contents(self::RESOURCE_DIR . '/2');
-        $this->assertEquals(['testAlias' => 'val', 'nonexistentAlias' => null], json_decode($content1, true));
+        $content2 = file_get_contents(self::RESOURCE_DIR . '/2');
+        $this->assertEquals(['testAlias' => 'val', 'nonexistentAlias' => null], json_decode($content2, true));
     }
 }
