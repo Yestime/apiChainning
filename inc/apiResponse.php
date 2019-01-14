@@ -29,7 +29,7 @@ class apiResponse {
                     $propertyPath = $alias;
                 }
 
-                $value = $this->response->getValue('body.' . $propertyPath);
+                $value = $this->valueFromBody($propertyPath);
                 $body = $this->response->assignValueByPath($body, $alias, $value);
             }
 
@@ -46,6 +46,18 @@ class apiResponse {
         });
 
         return json_decode( json_encode($body) );
+    }
+
+    public function getUrl() {
+        return $this->href;
+    }
+
+    public function asJSON() {
+        return json_encode($this->response->body);
+    }
+
+    public function valueFromBody($name) {
+        return $this->response->getValue('body.' . $name);
     }
 
     public function retrieveData($property) {
