@@ -24,9 +24,13 @@ class apiResponse {
         if ($return !== true || is_array($return)) {
             $body = [];
 
-            foreach ($return as $propertyPath) {
+            foreach ($return as $propertyPath => $alias) {
+                if ( is_numeric($propertyPath) ) {
+                    $propertyPath = $alias;
+                }
+
                 $value = $this->response->getValue('body.' . $propertyPath);
-                $body = $this->response->assignValueByPath($body, $propertyPath, $value);
+                $body = $this->response->assignValueByPath($body, $alias, $value);
             }
 
             $this->response->setBody( $this->normalizeBody($body) );

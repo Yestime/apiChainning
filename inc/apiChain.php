@@ -125,8 +125,7 @@ class apiChain {
 
     private function evaluate($str) {
         try {
-            $result = eval('return ' . $str . ';');
-            return $result;
+            return eval('return ' . $str . ';');
         } catch (\ParseError $e) {
             return false;
         }
