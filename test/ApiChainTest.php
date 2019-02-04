@@ -148,8 +148,7 @@ class ApiChainTest extends TestCase {
         $body = new stdClass();
         $body->some = 'val';
 
-        $chain = new apiChain($config, $handler, $this->createResponse($body));
-        $this->assertEquals(1, $chain->callsCompleted);
+        new apiChain($config, $handler, $this->createResponse($body));
     }
 
     private function createRule(array $partial) {
