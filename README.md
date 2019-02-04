@@ -24,6 +24,7 @@ url | The complete path (including querystring) for the call being performed | /
 method | The HTTP method you wish to use to perform the call (such as GET, POST, etc) | get
 data | A string or JSON Object of the data you wish to send via the call (typically with POST, PUT, PATCH, DELETE) | { "firstName" : "Jim", "lastName" : "Smith" }
 return | The data (as an array) you wish to have returned.  If you wish for all data to be returned, use boolean "true" or if you wish for no data to be returned, use boolean "false." | ["firstName", "email", "_links"]
+headers | Request headers (as an array).  This field is optional. | ["Connection" => "keep-alive", "Accept-Encoding" => "gzip, deflate, br"]
 
 A simple request where you want to retrieve a user's messages, but first need to make a call to the `/users` resource to obtain the information may look like this:
 

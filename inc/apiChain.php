@@ -12,7 +12,6 @@ class apiChain {
 
     private $handler;
     private $chain;
-    private $headers = [];
 
     /**
      * apiChain constructor.
@@ -32,7 +31,6 @@ class apiChain {
 
         $this->parentData = $parentData;
         $this->handler = $handler;
-        $this->headers = function_exists('getallheaders') ? getallheaders() : [];
         $this->responses[] = $lastResponse;
         $this->globals = $globals;
         $this->callsRequested = count($this->chain);
@@ -108,7 +106,12 @@ class apiChain {
             $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
-        $data = $this->handler($link->url, $link->method, $link->data);
+        $link->headers = (isset($link->headers) ? $link->headers : []);
+        foreach ($link->headers as $name => $val) {
+            $link->headers->$name = $this->replacePlaceholders($val, $response);
+        }
+
+        $data = $this->handler($link->url, $link->method, $link->data, $link->headers);
         $newResponse = new apiResponse($link->url, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
         if ( isset($link->globals) ) {
@@ -125,8 +128,7 @@ class apiChain {
 
     private function evaluate($str) {
         try {
-            $result = eval('return ' . $str . ';');
-            return $result;
+            return eval('return ' . $str . ';');
         } catch (\ParseError $e) {
             return false;
         }
@@ -156,9 +158,9 @@ class apiChain {
         return $content;
     }
 
-    private function handler($resource, $method, $body) {
+    private function handler($resource, $method, $body, $requestHeaders) {
         if ( is_callable($this->handler) ) {
-            return call_user_func($this->handler, $resource, $method, $this->headers, $body);
+            return call_user_func($this->handler, $resource, $method, $requestHeaders, $body);
         }
 
         return [
