@@ -35,9 +35,7 @@ A simple request where you want to retrieve a user's messages, but first need to
     "url": "/users/5",
     "method": "get",
     "data": {},
-    "return": [
-        "email", "_links"
-    ]
+    "return": "$.*._links"
   },
   {
     "doOn": 200,
@@ -46,6 +44,10 @@ A simple request where you want to retrieve a user's messages, but first need to
     "data": {
         "emailAddress": "$body.email"
     },
+    "headers": {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+    }
     "return": true,
   }
 ]
