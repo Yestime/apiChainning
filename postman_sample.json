@@ -1,0 +1,44 @@
+[
+  {
+    "doOn": "always",
+    "url": "www.tn-apis.com/catalog/v1/events/3604222",
+    "method": "get",
+    "headers": {
+      "Authorization": "Bearer 9750bc1c-178d-36f7-802b-b6b9ebcb3efd",
+      "x-listing-context": "website-config-id=3551",
+      "Accept": "application/json"
+    },
+    "return": {
+      "longitudeFromTN": "$.geoLocation.longitude",
+      "latitudeFromTN": "$.geoLocation.latitude",
+      "searchQueryFromTN": "<Expressions are not supported>"
+    }
+  },
+
+  {
+    "doOn": "always",
+    "url": "https://www.way.com/way-service/home/suggestions?Content-Type=application/json",
+    "method": "post",
+    "body": "<There is no way to provide request body right now>",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "return": {
+      "eventIdFromWay": "$.response[0].listingIdentifier",
+      "venueIdFromWay": "$.response[0].venueId",
+      "latitudeFromWay": "$.response[0].latitude",
+      "longitudeFromWay": "$.response[0].longitude"
+    }
+  },
+
+  {
+    "doOn": "always",
+    "url": "https://www.way.com/way-service/parking/search",
+    "method": "post",
+    "body": "<There is no way to provide request body right now>",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "return": true
+  }
+]
