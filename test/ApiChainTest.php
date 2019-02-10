@@ -1,6 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use apiChain\apiChain;
 
 class ApiChainTest extends TestCase {
     /**
@@ -8,16 +9,16 @@ class ApiChainTest extends TestCase {
      * @expectedExceptionMessage Error while parsing chain config: Syntax error
      */
     public function testInvalidJSONThrowsException() {
-        new \apiChain\apiChain("invalid json");
+        new apiChain("invalid json");
     }
 
     public function testDecreaseCallsRequestedForEachLink() {
-        $chain = new \apiChain\apiChain(json_encode([[]]), false);
+        $chain = new apiChain(json_encode([[]]), false);
         $this->assertEquals(0, $chain->callsRequested);
     }
 
     public function testUseParentDataAsLastResponse() {
-        $chain = new \apiChain\apiChain(json_encode([[]]), false, false, [], 'data');
+        $chain = new apiChain(json_encode([[]]), false, false, [], 'data');
         $this->assertEquals('data', $chain->lastResponse);
     }
 
@@ -30,7 +31,7 @@ class ApiChainTest extends TestCase {
             $this->assertEquals('/path//${global.nonexistent}', $resource);
         };
 
-        new \apiChain\apiChain($config, $handler, $this->createResponse(), [
+        new apiChain($config, $handler, $this->createResponse(), [
             'main' => 'path',
             'sub' => 'test'
         ]);
@@ -47,7 +48,7 @@ class ApiChainTest extends TestCase {
 
         $body = new stdClass();
         $body->key = 'val';
-        new \apiChain\apiChain($config, $handler, $this->createResponse($body));
+        new apiChain($config, $handler, $this->createResponse($body));
     }
 
     public function testChainWithoutHandler() {
@@ -55,7 +56,7 @@ class ApiChainTest extends TestCase {
             $this->createRule(['globals' => ['key' => 'val']])
         ]);
 
-        $chain = new \apiChain\apiChain($config);
+        $chain = new apiChain($config);
         $this->assertEquals(null, $chain->globals['key']);
     }
 
@@ -65,7 +66,7 @@ class ApiChainTest extends TestCase {
             $this->createRule(['doOn' => 'hack']),
         ]);
 
-        $chain = new \apiChain\apiChain($config);
+        $chain = new apiChain($config);
         $this->assertEquals(2, $chain->callsRequested);
         $this->assertEquals(1, $chain->callsCompleted);
         $this->assertEquals(0.5, $chain->getCallPer());
@@ -74,7 +75,7 @@ class ApiChainTest extends TestCase {
         $config = json_encode([
             $this->createRule(['doOn' => '"mike" == \'mike\'']),
         ]);
-        $chain = new \apiChain\apiChain($config, false, $this->createResponse());
+        $chain = new apiChain($config, false, $this->createResponse());
         $this->assertEquals(1, $chain->callsCompleted);
     }
 
@@ -83,13 +84,13 @@ class ApiChainTest extends TestCase {
             $this->createRule(['doOn' => '23\'2']),
         ]);
 
-        $chain = new \apiChain\apiChain($config, false, $this->createResponse());
+        $chain = new apiChain($config, false, $this->createResponse());
         $this->assertEquals(1, $chain->callsRequested);
         $this->assertEquals(0, $chain->callsCompleted);
     }
 
     public function testDefaultOutput() {
-        $chain = new \apiChain\apiChain(json_encode([]), false, $this->createResponse());
+        $chain = new apiChain(json_encode([]), false, $this->createResponse());
         $this->assertEquals([
             'parentData' => false,
             'callsRequested' => 0,
@@ -112,7 +113,7 @@ class ApiChainTest extends TestCase {
             $this->assertEquals('/test', $resource);
         };
 
-        $chain = new \apiChain\apiChain($config, $handler, $this->createResponse(''));
+        $chain = new apiChain($config, $handler, $this->createResponse(''));
         $this->assertEquals(1, $chain->callsCompleted);
 
 
@@ -127,8 +128,27 @@ class ApiChainTest extends TestCase {
             $this->fail( sprintf("Resource %s requested", $resource) );
         };
 
-        $chain = new \apiChain\apiChain($config, $handler, $this->createResponse(''));
+        $chain = new apiChain($config, $handler, $this->createResponse(''));
         $this->assertEquals(0, $chain->callsCompleted);
+    }
+
+    public function testRequestHeaders() {
+        $config = json_encode([
+            $this->createRule(['headers' => [
+                'simple' => 'val',
+                'placeholder' => 'custom_${body.some}'
+            ]]),
+        ]);
+
+        $handler = function ($url, $method, $requestHeaders) {
+            $this->assertEquals('val', $requestHeaders->simple);
+            $this->assertEquals('custom_val', $requestHeaders->placeholder);
+        };
+
+        $body = new stdClass();
+        $body->some = 'val';
+
+        new apiChain($config, $handler, $this->createResponse($body));
     }
 
     private function createRule(array $partial) {

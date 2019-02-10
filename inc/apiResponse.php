@@ -24,13 +24,22 @@ class apiResponse {
         if ($return !== true || is_array($return)) {
             $body = [];
 
-            foreach ($return as $propertyPath) {
-                $value = $this->response->getValue('body.' . $propertyPath);
-                $body = $this->response->assignValueByPath($body, $propertyPath, $value);
+            foreach ($return as $propertyPath => $alias) {
+                if ( is_numeric($propertyPath) ) {
+                    $propertyPath = $alias;
+                }
+
+                $value = $this->valueFromBody($propertyPath);
+                $body = $this->response->assignValueByPath($body, $alias, $value);
             }
 
             $this->response->setBody( $this->normalizeBody($body) );
         }
+    }
+
+    public function valueFromBody($path) {
+        $value = $this->response->getValue('body.' . $path);
+        return ($value === null ? $this->response->getValueByPath($path) : $value);
     }
 
     private function normalizeBody($body) {

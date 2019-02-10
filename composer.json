@@ -19,6 +19,12 @@
       "psr-4": { "apiChain\\": "inc" }
     },
 
+    "require": {
+        "php": ">=5.5.0",
+        "ext-json": "*",
+        "flow/jsonpath": "dev-master"
+    },
+
     "require-dev": {
         "phpunit/phpunit": "^7"
     },
