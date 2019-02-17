@@ -24,9 +24,9 @@ class apiResponse {
         if ($return !== true || is_array($return)) {
             $body = [];
 
-            foreach ($return as $propertyPath => $alias) {
-                if ( is_numeric($propertyPath) ) {
-                    $propertyPath = $alias;
+            foreach ($return as $alias => $propertyPath) {
+                if ( is_numeric($alias) ) {
+                    $alias = $propertyPath;
                 }
 
                 $value = $this->valueFromBody($propertyPath);
