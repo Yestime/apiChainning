@@ -13,7 +13,6 @@ class apiChain {
     private $handler;
     private $saveHandler;
     private $chain;
-    private $headers = [];
 
     /**
      * apiChain constructor.
@@ -111,7 +110,12 @@ class apiChain {
             $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
-        $data = $this->handler($link->url, $link->method, $link->data);
+        $link->headers = (isset($link->headers) ? $link->headers : []);
+        foreach ($link->headers as $name => $val) {
+            $link->headers->$name = $this->replacePlaceholders($val, $response);
+        }
+
+        $data = $this->handler($link->url, $link->method, $link->data, $link->headers);
         $newResponse = new apiResponse($link->url, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
         if ( isset($link->globals) ) {
@@ -162,9 +166,9 @@ class apiChain {
         return $content;
     }
 
-    private function handler($resource, $method, $body) {
+    private function handler($resource, $method, $body, $requestHeaders) {
         if ( is_callable($this->handler) ) {
-            return call_user_func($this->handler, $resource, $method, $this->headers, $body);
+            return call_user_func($this->handler, $resource, $method, $requestHeaders, $body);
         }
 
         return [

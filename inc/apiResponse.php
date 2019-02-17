@@ -37,6 +37,11 @@ class apiResponse {
         }
     }
 
+    public function valueFromBody($path) {
+        $value = $this->response->getValue('body.' . $path);
+        return ($value === null ? $this->response->getValueByPath($path) : $value);
+    }
+
     private function normalizeBody($body) {
         ArrayUtils::walkValues($body, function (&$val) {
             if ( is_array($val) && ArrayUtils::allNumericKeys($val) && !ArrayUtils::isSequential($val) ) {

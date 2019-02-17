@@ -18,11 +18,11 @@ class ResponseTest extends TestCase {
     public function testSettingBodyBasedOnReturn() {
         $tests = [
             [[], ['key'], function ($body) {
-                $this->assertNull($body->key);
+                $this->assertEquals([], $body->key);
             }],
 
             [['key' => 'val'], ['nonexistent'], function ($body) {
-                $this->assertNull($body->nonexistent);
+                $this->assertEquals([], $body->nonexistent);
             }],
 
             [['key' => 'val'], ['key'], function ($body) {
@@ -68,14 +68,29 @@ class ResponseTest extends TestCase {
                 $this->assertEquals('val1', $body->alias1);
                 $this->assertEquals('val2', $body->alias2);
             }],
+
+
+            [['people' => [['name' => 'Joe'], ['name' => 'Bob']]], ['$.people.*.name' => 'people'], function ($body) {
+                $this->assertEquals(['Joe', 'Bob'], $body->people);
+            }],
+
         ];
 
         array_walk($tests, function ($item) {
             list ($body, $return, $assertCallback) = $item;
 
-            $response = new \apiChain\apiResponse('', '', 0, [], $this->arrayToObject($body), $return);
+            $response = $this->createResponse($body, $return);
             $assertCallback($response->response->getBody());
         });
+    }
+
+    public function testInvalidJSONPathReturnsNull() {
+        $response = $this->createResponse([], ['$$' => 'test']);
+        $this->assertNull($response->response->getBody()->test);
+    }
+
+    private function createResponse($body, $return) {
+        return new \apiChain\apiResponse('', '', 0, [], $this->arrayToObject($body), $return);
     }
 
     private function arrayToObject(array $arr) {

@@ -2,9 +2,15 @@
 
 namespace apiChain;
 
+use Flow\JSONPath\JSONPath;
+use Flow\JSONPath\JSONPathException;
+
 class HTTPResponse {
     public $headers;
     public $body;
+
+    /** @var JSONPath */
+    private $jsonPath;
 
     public function getHeaders() {
         return $this->headers;
@@ -20,6 +26,7 @@ class HTTPResponse {
 
     public function setBody($body) {
         $this->body = $body;
+        $this->jsonPath = new JSONPath($body);
     }
 
     public function assignValueByPath($arr, $path, $value, $separator = '.') {
@@ -42,6 +49,18 @@ class HTTPResponse {
         }
 
         return $resp;
+    }
+
+    /**
+     * @param $path
+     * @return JSONPath
+     */
+    public function getValueByPath($path) {
+        try {
+            return $this->jsonPath->find($path);
+        } catch (JSONPathException $e) {
+            return null;
+        }
     }
 
     /**
