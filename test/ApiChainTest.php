@@ -2,6 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 use apiChain\apiChain;
+use apiChain\apiResponse;
+
 
 class ApiChainTest extends TestCase {
     /**
@@ -15,6 +17,7 @@ class ApiChainTest extends TestCase {
     public function testDecreaseCallsRequestedForEachLink() {
         $chain = new apiChain(json_encode([[]]), false);
         $this->assertEquals(0, $chain->callsRequested);
+        $this->assertEquals(0, $chain->callsCompleted);
     }
 
     public function testUseParentDataAsLastResponse() {
@@ -46,9 +49,9 @@ class ApiChainTest extends TestCase {
             $this->assertEquals('val', $body->key);
         };
 
-        $body = new stdClass();
-        $body->key = 'val';
-        new apiChain($config, $handler, $this->createResponse($body));
+
+        new apiChain($config, $handler, $this->createResponse(['key' => 'val']));
+
     }
 
     public function testChainWithoutHandler() {
@@ -132,6 +135,31 @@ class ApiChainTest extends TestCase {
         $this->assertEquals(0, $chain->callsCompleted);
     }
 
+
+    public function testReturnAliases() {
+        $config = json_encode([
+            $this->createRule([
+                'return' => ['key' => 'alias'],
+            ]),
+        ]);
+
+        $handler = function () {
+            return [
+                'status' => 200,
+                'headers' => [],
+                'body' => [
+                    'key' => 'val'
+                ]
+            ];
+        };
+
+        $chain = new apiChain($config, $handler, $this->createResponse());
+
+        $response = $chain->responses[1]->response;
+        $this->assertEquals('val', $response->body->alias);
+        $this->assertFalse( isset($response->body->key) );
+   }
+
     public function testRequestHeaders() {
         $config = json_encode([
             $this->createRule(['headers' => [
@@ -149,6 +177,7 @@ class ApiChainTest extends TestCase {
         $body->some = 'val';
 
         new apiChain($config, $handler, $this->createResponse($body));
+
     }
 
     private function createRule(array $partial) {
@@ -162,7 +191,8 @@ class ApiChainTest extends TestCase {
     }
 
     private function createResponse($body = null) {
-        $body = ($body === null ? new stdClass() : $body);
-        return new \apiChain\apiResponse([], '', 0, [], $body, true);
+        $body = ($body === null ? [] : $body);
+        $bodyObject = json_decode( json_encode($body) );
+        return new apiResponse([], '', 0, [], $bodyObject, true);
     }
 }

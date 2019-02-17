@@ -11,6 +11,7 @@ class apiChain {
     public $lastResponse;
 
     private $handler;
+    private $saveHandler;
     private $chain;
 
     /**
@@ -20,9 +21,10 @@ class apiChain {
      * @param bool $lastResponse
      * @param array $globals
      * @param bool $parentData
+     * @param callable|false $saveHandler
      * @throws ApiChainError
      */
-    function __construct($chain, $handler = false, $lastResponse = false, $globals = [], $parentData = false) {
+    function __construct($chain, $handler = false, $lastResponse = false, $globals = [], $parentData = false, $saveHandler = false) {
         $this->chain = json_decode($chain);
 
         if (json_last_error()) {
@@ -31,6 +33,8 @@ class apiChain {
 
         $this->parentData = $parentData;
         $this->handler = $handler;
+        $this->saveHandler = $saveHandler;
+        $this->headers = function_exists('getallheaders') ? getallheaders() : [];
         $this->responses[] = $lastResponse;
         $this->globals = $globals;
         $this->callsRequested = count($this->chain);
@@ -118,6 +122,10 @@ class apiChain {
             foreach ($link->globals as $k => $v) {
                 $this->globals[$k] = $newResponse->retrieveData($v);
             }
+        }
+
+        if ( is_callable($this->saveHandler) ) {
+            call_user_func($this->saveHandler, $newResponse);
         }
 
         $this->responses[] = $newResponse;

@@ -137,5 +137,3 @@ $chain = '[
 
 $chain = new apiChain\apiChain($chain, 'myCalls');
 echo $chain->getOutput();
-
-?>

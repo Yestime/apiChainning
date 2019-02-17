@@ -63,14 +63,20 @@ class ResponseTest extends TestCase {
                 $this->assertEquals('val2', $body->arr[1]->nested);
             }],
 
-            [['path' => ['arr' => ['val1', 'val2']]], ['alias1' => 'path.arr[0]', 'alias2' => 'path.arr[1]'], function ($body) {
+
+
+             [['path' => ['arr' => ['val1', 'val2']]], ['alias1' => 'path.arr[0]', 'alias2' => 'path.arr[1]'], function ($body) {
+
                 $this->assertEquals('val1', $body->alias1);
                 $this->assertEquals('val2', $body->alias2);
             }],
 
+
             [['people' => [['name' => 'Joe'], ['name' => 'Bob']]], ['people' => '$.people.*.name'], function ($body) {
+
                 $this->assertEquals(['Joe', 'Bob'], $body->people);
             }],
+
         ];
 
         array_walk($tests, function ($item) {
