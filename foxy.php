@@ -302,4 +302,3 @@ echo '<br /><br />';
 echo json_encode(myCalls('/stores/66', array(), array())['body']);
 echo '<br /><br />';
 echo json_encode(myCalls('/stores/2/carts', array(), array())['body']);
-?>
