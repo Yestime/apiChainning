@@ -61,10 +61,6 @@ class apiResponse {
         return json_encode($this->response->body);
     }
 
-    public function valueFromBody($name) {
-        return $this->response->getValue('body.' . $name);
-    }
-
     public function retrieveData($property) {
         return $this->response->getValue($property);
     }
