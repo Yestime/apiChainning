@@ -25,7 +25,7 @@ class apiChain {
      * @throws ApiChainError
      */
     function __construct($chain, $handler = false, $lastResponse = false, $globals = [], $parentData = false, $saveHandler = false) {
-        $this->chain = json_decode($chain);
+        $this->chain = json_decode($chain, true);
 
         if (json_last_error()) {
             throw new ApiChainError('Error while parsing chain config: ' . json_last_error_msg());
