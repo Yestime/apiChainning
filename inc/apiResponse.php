@@ -3,13 +3,13 @@
 namespace apiChain;
 
 class apiResponse {
-    public $href;
+    public $url;
     public $method;
     public $status;
     public $response;
 
     function __construct($resource, $method, $status, $headers, $body, $return) {
-        $this->href = $resource;
+        $this->url = $resource;
         $this->method = $method;
         $this->status = $status;
 
@@ -54,7 +54,7 @@ class apiResponse {
     }
 
     public function getUrl() {
-        return $this->href;
+        return $this->url;
     }
 
     public function asJSON() {
