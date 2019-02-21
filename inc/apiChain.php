@@ -110,12 +110,14 @@ class apiChain {
             $link->data->$k = $this->replacePlaceholders($v, $response);
         }
 
+
         $link->headers = (isset($link->headers) ? $link->headers : []);
         foreach ($link->headers as $name => $val) {
             $link->headers->$name = $this->replacePlaceholders($val, $response);
         }
 
         $data = $this->handler($link->url, $link->method, $link->data, $link->headers);
+
         $newResponse = new apiResponse($link->url, $link->method, $data['status'], $data['headers'], $data['body'], $link->return);
 
         if ( isset($link->globals) ) {
@@ -155,14 +157,21 @@ class apiChain {
     }
 
     private function replacePlaceholders($content, $response, $withQuotes = false) {
-        if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
-            if ($response instanceof apiResponse) {
-                $value = $response->retrieveData(substr($match[0], 1));
+        
+        if(gettype($content) == "string"){
+            while( strpos($content,"\$") !==false ){
+               if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
+                    if ($response instanceof apiResponse) {
 
-                return str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
+                        $value = $response->retrieveData(substr($match[0], 1));
+
+                        $content = str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
+
+        
+                    }
+                }         
             }
         }
-
         return $content;
     }
 
