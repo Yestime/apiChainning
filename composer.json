@@ -30,7 +30,7 @@
     },
 
     "repositories": [{
-        "url": "https://github.com/Stexxe/phplib-for-api-chaining.git",
+        "url": "https://github.com/Yestime/apiChainning.git",
         "type": "git"
     }]
 }
