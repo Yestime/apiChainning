@@ -127,7 +127,7 @@ class apiChain {
         }
 
         if ( is_callable($this->saveHandler) ) {
-            call_user_func($this->saveHandler, $newResponse);
+            call_user_func($this->saveHandler, $link->name, $link->url, $link->method, $link->header, $link->data, $link->globals, $newResponse);
         }
 
         $this->responses[] = $newResponse;
