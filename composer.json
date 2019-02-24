@@ -22,7 +22,7 @@
     "require": {
         "php": ">=5.5.0",
         "ext-json": "*",
-        "flow/jsonpath": "dev-master"
+        "flow/jsonpath": "^0.4"
     },
 
     "require-dev": {
