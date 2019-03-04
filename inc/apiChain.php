@@ -127,7 +127,7 @@ class apiChain {
         }
 
         if ( is_callable($this->saveHandler) ) {
-            call_user_func($this->saveHandler, $link->name, $link->url, $link->method, $link->header, $link->data, $link->globals, $newResponse);
+            call_user_func($this->saveHandler, $link->name, $link->url, $link->method, $link->headers, $link->data, $this->globals, $newResponse);
         }
 
         $this->responses[] = $newResponse;
@@ -164,7 +164,7 @@ class apiChain {
                     if ($response instanceof apiResponse) {
 
                         $value = $response->retrieveData(substr($match[0], 1));
-
+                        $value = is_string($value)?$value:'';
                         $content = str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
 
         
