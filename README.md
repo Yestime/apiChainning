@@ -144,7 +144,30 @@ Logic | Example | Meaning
 regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
 !regex() | regex('/[a-z]/i', $body.firstName) | Does **not match** regular expression
 
-### Complex Example:
+### Complex Example 1:
+```
+[
+  {
+    "doOn": "always",
+    "url": "/users/5",
+    "method": "get",
+    "data": {},
+    "return": [
+        "firstName", "lastName", "email", "_links"
+    ]
+  },
+  {
+    "doOn": "($body.firstName == "Jim" && $body.lastName == "Smith") || regex('/Jim/i', $body.email)",
+    "url" : "$body._links.messages",
+    "method": "get",
+    "data": {
+        "emailAddress": "$body.email"
+    },
+    "return": true,
+  }
+]
+```
+### Complex Example 2:
 ```
 [
   {
