@@ -185,7 +185,7 @@ regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
             "return": {
                 "latitudeFromTN": "geoLocation.latitude",
                 "longitudeFromTN": "geoLocation.longitude",
-                "dateFromTN": "${callback_extract_date(date.datetime,0,10)}",
+                "dateFromTN": "${callback_extract_date(date.datetime,0,10)}",  // custom php callbacks are created with and called by prefixing them with callback.  An addition any php function can be called using the prefix "callback_"
                 "timeFromTN": "${callback_format_time(date.text.time)}",
                 "venueId": "venue.id",
                 "countryFromTN": "country.alphaCode",
