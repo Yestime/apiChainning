@@ -246,7 +246,25 @@ regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
         }
 ]
 ```
-
+```
+### Complex Example 3(using headers/ accept :application/xml):
+```
+ [
+        {
+            "doOn": "always",
+            "url": "https://link-search.api.cj.com/v2/link-search?website-id=9007016&link-type=banner&advertiser-ids=joined",
+            "method": "get",
+            "name": "api:cjmanual:v2:linksearch",
+            "globals": {},
+            "data": {},
+            "headers": {
+                "Authorization": "Bearer 351q6ebydq98pwv1fttxcgpsqs",
+                "Accept": "application/xml"
+            },
+            "return": true
+        }
+    ]
+```
 
 ## Responses
 Because conditional chaining and errors are possible when using REST API Multiple-Request Chaining, the response object needs to return three primary properties:
