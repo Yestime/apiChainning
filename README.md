@@ -144,7 +144,7 @@ Logic | Example | Meaning
 regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
 !regex() | regex('/[a-z]/i', $body.firstName) | Does **not match** regular expression
 
-### Complex Example:
+### Complex Example 1:
 ```
 [
   {
@@ -167,7 +167,107 @@ regex() | regex('/[a-z]/i', $body.firstName) | **Match** a regular expression
   }
 ]
 ```
+### Complex Example 2:
+```
+[
+        {
+            "doOn": "always",
+            "url": "https://www.tn-apis.com/catalog/v1/events/${global.eventId}",
+            "method": "get",
+            "name": "api:ticketnetwork:catalog:events",
+            "globals": {},
+            "data": {},
+            "headers": {
+                "Authorization": "Bearer 9750bc1c-178d-36f7-802b-b6b9ebcb3efd",
+                "x-listing-context": "website-config-id=3551",
+                "Accept": "application/json"
+            },
+            "return": {
+                "latitudeFromTN": "geoLocation.latitude",
+                "longitudeFromTN": "geoLocation.longitude",
+                // custom php callbacks are created with 
+                //and called by prefixing them with callback.  An addition any php function 
+                //can be called using the prefix "callback_"
+                "dateFromTN": "${callback_extract_date(date.datetime,0,10)}",  
+                "timeFromTN": "${callback_format_time(date.text.time)}",
+                "venueId": "venue.id",
+                "countryFromTN": "country.alphaCode",
+                "stateFromTN": "stateProvince.text.abbr",
+                "eventNameFromTN": "text.name",
+                "cityFromTN": "city.text.name",
+                "isResult": "${callback_has_results(venue.id)}"
+            }
+        },
+        {
+            "doOn": "200",
+            "url": "https://www.way.com/way-service/home/suggestions",
+            "method": "post",
+            "name": "api:way:suggestions",
+            "data": {
+                "latitude": "$body.latitudeFromTN",
+                "longitude": "$body.longitudeFromTN",
+                "searchQuery": "TNvenue${body.venueId}WAY ${body.dateFromTN} ${body.timeFromTN}",
+                "serviceType": "PARKING"
+            },
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "return": {
+                "wayEventId": "response[0].listingIdentifier",
+                "wayVenueId": "response[0].venueId",
+                "wayLatitude": "response[0].latitude",
+                "wayLongitude": "response[0].longitude",
+                "wayAddressLine1": "response[0].addressBo.addressLine1",
+                "wayCity": "response[0].addressBo.city.cityName",
+                "wayState": "response[0].addressBo.state.stateCode",
+                "wayZipcode": "response[0].addressBo.zipcode.zipcode",
+                "wayCountry": "response[0].addressBo.country.countryName",
+                "wayHasResult": "${callback_has_results(response)}"
+            }
+        },
+        {
+            "doOn": "$body.wayHasResult == true",
+            "url": "https://www.way.com/way-service/parking/search",
+            "method": "post",
+            "name": "api:way:parking:search:events",
+            "data": {
+                "eventId": "$body.wayEventId",
+                "reqType": "jump",
+                "venueId": "$body.wayVenueId",
+                "latitude": "$body.wayLatitude",
+                "longitude": "$body.wayLongitude",
+                "pageIndex": 1,
+                "parkingFilter": {
+                    "nearBy": "Event"
+                },
+                "numberOfRecords": 10
+            },
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "return": true
+        }
+]
+```
 
+### Complex Example 3(using headers/ accept :application/xml):
+```
+ [
+        {
+            "doOn": "always",
+            "url": "https://link-search.api.cj.com/v2/link-search?website-id=9007016&link-type=banner&advertiser-ids=joined",
+            "method": "get",
+            "name": "api:cjmanual:v2:linksearch",
+            "globals": {},
+            "data": {},
+            "headers": {
+                "Authorization": "Bearer 351q6ebydq98pwv1fttxcgpsqs",
+                "Accept": "application/xml"
+            },
+            "return": true
+        }
+    ]
+```
 
 ## Responses
 Because conditional chaining and errors are possible when using REST API Multiple-Request Chaining, the response object needs to return three primary properties:
