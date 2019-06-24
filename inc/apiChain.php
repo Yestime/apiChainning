@@ -151,8 +151,8 @@ class apiChain {
     private function replaceGlobals($content) {
         if (preg_match_all('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $matches)) {
             if($matches[0]){
-                foreach($matches[0] as $index => $value){
-                    return str_replace($matches[0][$index], $this->globals[$matches[1][$index]], $content);
+                foreach($matches[0][0] as $index => $value){
+                    return str_replace($matches[0][0][$index], $this->globals[$matches[0][1][$index]], $content);
                 }
             }
 
