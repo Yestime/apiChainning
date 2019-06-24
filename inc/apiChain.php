@@ -152,7 +152,9 @@ class apiChain {
         if (preg_match_all('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $matches)) {
             if($matches[1]){
                 foreach($matches[0] as $index => $value){
-                    $content = str_replace($matches[0][$index], $this->globals[$matches[1][$index]], $content);
+                    $content = str_replace($matches[0][$index], isset($this->globals[$matches[1][$index]])
+                                                                        ? $this->globals[$matches[1][$index]]
+                                                                        : '', $content);
                 }
             }
 
