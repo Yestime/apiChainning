@@ -149,27 +149,32 @@ class apiChain {
     }
 
     private function replaceGlobals($content) {
-        if (preg_match('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $match)) {
-            return str_replace($match[0], $this->globals[$match[1]], $content);
+        if (preg_match_all('/\${?global\.([a-z0-9_\.]+)}?/i', $content, $matches)) {
+            foreach($matches as $index => $match){
+                return str_replace($match[0], $this->globals[$match[1]], $content);
+            }
         }
 
         return $content;
     }
 
     private function replacePlaceholders($content, $response, $withQuotes = false) {
-        
+
         if(gettype($content) == "string"){
             while( strpos($content,"\$") !==false ){
-               if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
+                if (preg_match('/(\${?[a-z:_]+(\[[0-9]+\])?)(\.[a-z:_]+(\[[0-9]+\])?)*}?/i', $content, $match)) {
                     if ($response instanceof apiResponse) {
 
                         $value = $response->retrieveData(substr($match[0], 1));
-                        $value = is_string($value)?$value:'';
+                        //$value = is_string($value)?$value:'';
+                        if(is_array($value)){
+                            // dd([$content,$match[0],$value]);
+                        }
                         $content = str_replace($match[0], ($withQuotes ? sprintf('"%s"', $value) : $value), $content);
 
-        
+
                     }
-                }         
+                }
             }
         }
         return $content;
